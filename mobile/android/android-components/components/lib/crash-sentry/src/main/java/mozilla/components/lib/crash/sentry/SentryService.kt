@@ -45,6 +45,7 @@ class SentryService(
     private val sendEventForNativeCrashes: Boolean = false,
     private val sentryProjectUrl: String? = null,
     private val sendCaughtExceptions: Boolean = true,
+    private val crashMetadataEventProcessor: CrashMetadataEventProcessor? = null
 ) : CrashReporterService {
 
     override val id: String = "new-sentry-instance"
@@ -53,8 +54,6 @@ class SentryService(
     @VisibleForTesting
     @GuardedBy("this")
     internal var isInitialized: Boolean = false
-
-    private val crashMetadataEventProcessor = CrashMetadataEventProcessor()
 
     override fun createCrashReportUrl(identifier: String): String? {
         return sentryProjectUrl?.let {
@@ -145,7 +144,10 @@ class SentryService(
             options.environment = environment
             options.addEventProcessor(RustCrashEventProcessor())
             options.addEventProcessor(AddMechanismEventProcessor())
-            options.addEventProcessor(crashMetadataEventProcessor)
+            crashMetadataEventProcessor?.also {
+                options.addEventProcessor(it)
+            }
+
         }
     }
 
@@ -165,9 +167,7 @@ class SentryService(
             Sentry.setLevel(level)
         }
 
-        crash?.let {
-            crashMetadataEventProcessor.crashToProcess = it
-        }
+        crashMetadataEventProcessor?.crashToProcess = crash
     }
 
     private fun SentryId.alsoClearBreadcrumbs(): String {
