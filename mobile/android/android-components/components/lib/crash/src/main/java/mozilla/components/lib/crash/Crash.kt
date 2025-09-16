@@ -10,8 +10,10 @@ import androidx.annotation.StringDef
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.support.utils.ext.getParcelableArrayListCompat
 import mozilla.components.support.utils.ext.getSerializableCompat
+import org.json.JSONArray
 import java.io.Serializable
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 // Intent extra used to store crash data under when passing crashes in Intent objects
 private const val INTENT_CRASH = "mozilla.components.lib.crash.CRASH"
@@ -250,9 +252,83 @@ interface RuntimeTagProvider {
     operator fun invoke(): Map<String, String>
 }
 
+val Crash.release: String
+    get() = runtimeTags[RuntimeTag.RELEASE] ?: "N/A"
+
+val Crash.versionName: String
+    get() = runtimeTags[RuntimeTag.VERSION_NAME] ?: release
+
+val Crash.geckoViewVersion: String
+    get() = runtimeTags[RuntimeTag.GECKOVIEW_VERSION] ?: versionName
+
+val Crash.buildId: String
+    get() = runtimeTags[RuntimeTag.BUILD_ID] ?: "N/A"
+
+val Crash.gitHash: String
+    get() = runtimeTags[RuntimeTag.GIT] ?: "N/A"
+
+val Crash.acVersion: String
+    get() = runtimeTags[RuntimeTag.AC_VERSION] ?: "N/A"
+
+val Crash.asVersion: String
+    get() = runtimeTags[RuntimeTag.AS_VERSION] ?: "N/A"
+
+val Crash.gleanVersion: String
+    get() = runtimeTags[RuntimeTag.GLEAN_VERSION] ?: "N/A"
+
+val Crash.locale: String
+    get() = runtimeTags[RuntimeTag.LOCALE] ?: "N/A"
+
+val Crash.startTime: String
+    get() = runtimeTags[RuntimeTag.START_TIME] ?: "N/A"
+
+val Crash.crashTime: String
+    get() = TimeUnit.MILLISECONDS.toSeconds(timestamp).toString()
+
+val Crash.isFatalCrash: Boolean
+    get() = when (this) {
+        is Crash.UncaughtExceptionCrash -> true
+        is Crash.NativeCodeCrash -> this.isFatal
+    }
+
+val Crash.isNativeCodeCrash: Boolean
+    get() = this is Crash.NativeCodeCrash
+
+val Crash.miniDumpFilePath: String?
+    get() = (this as? Crash.NativeCodeCrash)?.minidumpPath
+
+val Crash.extrasFilePath: String?
+    get() = (this as? Crash.NativeCodeCrash)?.extrasPath
+
+val Crash.throwable: Throwable?
+    get() = (this as? Crash.UncaughtExceptionCrash)?.throwable
+
+val Crash.breadcrumbsJson: JSONArray
+    get() {
+        val breadcrumbsJson = JSONArray()
+        for (breadcrumb in breadcrumbs) {
+            breadcrumbsJson.put(breadcrumb.toJson())
+        }
+        return breadcrumbsJson
+    }
+
+val Crash.versionCode: String
+    get() = runtimeTags[RuntimeTag.VERSION_CODE] ?: "N/A"
+
 /**
  * Namespace for RuntimeTag keys
  */
 object RuntimeTag {
-    const val RELEASE = "release"
+    const val RELEASE = "release" // deprecated, dont use
+
+    const val START_TIME = "start_time"
+    const val GIT = "git_hash"
+    const val AC_VERSION = "ac_version"
+    const val AS_VERSION = "as_version"
+    const val GLEAN_VERSION = "glean_version"
+    const val LOCALE = "locale"
+    const val BUILD_ID = "build_id"
+    const val VERSION_CODE = "version_code"
+    const val VERSION_NAME = "version_name"
+    const val GECKOVIEW_VERSION = "geckoview_version"
 }
