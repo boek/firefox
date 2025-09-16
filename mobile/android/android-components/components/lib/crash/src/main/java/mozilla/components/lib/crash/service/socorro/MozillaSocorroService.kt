@@ -2,24 +2,38 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package mozilla.components.lib.crash.service
+package mozilla.components.lib.crash.service.socorro
 
 import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.VisibleForTesting
-import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.Crash
-import mozilla.components.lib.crash.RuntimeTag
+import mozilla.components.lib.crash.acVersion
+import mozilla.components.lib.crash.asVersion
+import mozilla.components.lib.crash.breadcrumbsJson
+import mozilla.components.lib.crash.buildId
+import mozilla.components.lib.crash.crashTime
+import mozilla.components.lib.crash.extrasFilePath
+import mozilla.components.lib.crash.geckoViewVersion
+import mozilla.components.lib.crash.gleanVersion
+import mozilla.components.lib.crash.isFatalCrash
+import mozilla.components.lib.crash.isNativeCodeCrash
+import mozilla.components.lib.crash.miniDumpFilePath
 import mozilla.components.lib.crash.service.CrashReport.Annotation
+import mozilla.components.lib.crash.service.CrashReporterService
+import mozilla.components.lib.crash.service.LIB_CRASH_INFO_PREFIX
+import mozilla.components.lib.crash.startTime
+import mozilla.components.lib.crash.throwable
+import mozilla.components.lib.crash.versionCode
+import mozilla.components.lib.crash.versionName
 import mozilla.components.support.base.ext.getStacktraceAsJsonString
 import mozilla.components.support.base.ext.getStacktraceAsString
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.getPackageInfoCompat
-import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -48,10 +62,6 @@ internal const val UNCAUGHT_EXCEPTION_TYPE = "uncaught exception"
 internal const val FATAL_NATIVE_CRASH_TYPE = "fatal native crash"
 internal const val NON_FATAL_NATIVE_CRASH_TYPE = "non-fatal native crash"
 
-internal const val DEFAULT_VERSION_NAME = "N/A"
-internal const val DEFAULT_VERSION_CODE = "N/A"
-internal const val DEFAULT_VERSION = "N/A"
-internal const val DEFAULT_BUILD_ID = "N/A"
 internal const val DEFAULT_VENDOR = "N/A"
 internal const val DEFAULT_RELEASE_CHANNEL = "N/A"
 internal const val DEFAULT_DISTRIBUTION_ID = "N/A"
@@ -81,23 +91,17 @@ private const val FILE_REGEX = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
  * @param distributionId The distribution id of the application.
  */
 @Suppress("LargeClass")
-@Deprecated("Use `MozillaSocorroService` in the socorro package.")
 class MozillaSocorroService(
     private val applicationContext: Context,
     private val appName: String,
     private val appId: String = MOZILLA_PRODUCT_ID,
-    private val version: String = DEFAULT_VERSION,
-    private val buildId: String = DEFAULT_BUILD_ID,
     private val vendor: String = DEFAULT_VENDOR,
     @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val serverUrl: String? = null,
-    private var versionName: String = DEFAULT_VERSION_NAME,
-    private var versionCode: String = DEFAULT_VERSION_CODE,
     private val releaseChannel: String = DEFAULT_RELEASE_CHANNEL,
     private val distributionId: String = DEFAULT_DISTRIBUTION_ID,
 ) : CrashReporterService {
     private val logger = Logger("mozac/MozillaSocorroCrashHelperService")
-    private val startTime = System.currentTimeMillis()
     private val ignoreKeys = hashSetOf("URL", "ServerURL", "StackTraces")
 
     override val id: String = "socorro"
@@ -108,53 +112,12 @@ class MozillaSocorroService(
         return "https://crash-stats.mozilla.org/report/index/$identifier"
     }
 
-    init {
-        val packageInfo = try {
-            applicationContext.packageManager.getPackageInfoCompat(applicationContext.packageName, 0)
-        } catch (e: PackageManager.NameNotFoundException) {
-            logger.error("package name not found, failed to get application version")
-            null
-        }
-
-        packageInfo?.let {
-            if (versionName == DEFAULT_VERSION_NAME) {
-                try {
-                    versionName = packageInfo.versionName ?: DEFAULT_VERSION_NAME
-                } catch (e: IllegalStateException) {
-                    logger.error("failed to get application version")
-                }
-            }
-
-            if (versionCode == DEFAULT_VERSION_CODE) {
-                try {
-                    versionCode = PackageInfoCompat.getLongVersionCode(packageInfo).toString()
-                } catch (e: IllegalStateException) {
-                    logger.error("failed to get application version code")
-                }
-            }
-        }
-    }
-
     override fun report(crash: Crash.UncaughtExceptionCrash): String? {
-        return sendReport(
-            crash = crash,
-            crash.throwable,
-            miniDumpFilePath = null,
-            extrasFilePath = null,
-            isNativeCodeCrash = false,
-            isFatalCrash = true,
-        )
+        return sendReport(crash)
     }
 
     override fun report(crash: Crash.NativeCodeCrash): String? {
-        return sendReport(
-            crash = crash,
-            throwable = null,
-            miniDumpFilePath = crash.minidumpPath,
-            extrasFilePath = crash.extrasPath,
-            isNativeCodeCrash = true,
-            isFatalCrash = crash.isFatal,
-        )
+        return sendReport(crash)
     }
 
     override fun report(throwable: Throwable, breadcrumbs: ArrayList<Breadcrumb>): String? {
@@ -165,21 +128,10 @@ class MozillaSocorroService(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun sendReport(
         crash: Crash,
-        throwable: Throwable?,
-        miniDumpFilePath: String?,
-        extrasFilePath: String?,
-        isNativeCodeCrash: Boolean,
-        isFatalCrash: Boolean,
     ): String? {
-        val crashVersionName = crash.runtimeTags[RuntimeTag.RELEASE] ?: versionName
-        val url = URL(serverUrl ?: buildServerUrl(crashVersionName))
+        val url = URL(serverUrl ?: buildServerUrl(crash))
         val boundary = generateBoundary()
         var conn: HttpURLConnection? = null
-
-        val breadcrumbsJson = JSONArray()
-        for (breadcrumb in crash.breadcrumbs) {
-            breadcrumbsJson.put(breadcrumb.toJson())
-        }
 
         try {
             conn = url.openConnection() as HttpURLConnection
@@ -188,10 +140,7 @@ class MozillaSocorroService(
             conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
             conn.setRequestProperty("Content-Encoding", "gzip")
 
-            sendCrashData(
-                conn.outputStream, boundary, crash.timestamp, throwable, miniDumpFilePath, extrasFilePath,
-                isNativeCodeCrash, isFatalCrash, breadcrumbsJson.toString(), crashVersionName,
-            )
+            sendCrashData(conn.outputStream, boundary, crash)
 
             BufferedReader(InputStreamReader(conn.inputStream)).use { reader ->
                 val map = parseResponse(reader)
@@ -242,33 +191,26 @@ class MozillaSocorroService(
     private fun sendCrashData(
         os: OutputStream,
         boundary: String,
-        timestamp: Long,
-        throwable: Throwable?,
-        miniDumpFilePath: String?,
-        extrasFilePath: String?,
-        isNativeCodeCrash: Boolean,
-        isFatalCrash: Boolean,
-        breadcrumbs: String,
-        versionName: String,
+        crash: Crash,
     ) {
         val formDataWriter = createFormDataWriter(GZIPOutputStream(os), boundary, logger)
         formDataWriter.sendAnnotation(Annotation.ProductName, appName)
         formDataWriter.sendAnnotation(Annotation.ProductID, appId)
-        formDataWriter.sendAnnotation(Annotation.Version, versionName)
-        formDataWriter.sendAnnotation(Annotation.ApplicationBuildID, versionCode)
-        formDataWriter.sendAnnotation(Annotation.AndroidComponentVersion, AcBuild.VERSION)
-        formDataWriter.sendAnnotation(Annotation.GleanVersion, AcBuild.GLEAN_SDK_VERSION)
-        formDataWriter.sendAnnotation(Annotation.ApplicationServicesVersion, AcBuild.APPLICATION_SERVICES_VERSION)
-        formDataWriter.sendAnnotation(Annotation.GeckoViewVersion, version)
-        formDataWriter.sendAnnotation(Annotation.BuildID, buildId)
+        formDataWriter.sendAnnotation(Annotation.Version, crash.versionName)
+        formDataWriter.sendAnnotation(Annotation.ApplicationBuildID, crash.versionCode)
+        formDataWriter.sendAnnotation(Annotation.AndroidComponentVersion, crash.acVersion)
+        formDataWriter.sendAnnotation(Annotation.GleanVersion, crash.gleanVersion)
+        formDataWriter.sendAnnotation(Annotation.ApplicationServicesVersion, crash.asVersion)
+        formDataWriter.sendAnnotation(Annotation.GeckoViewVersion, crash.geckoViewVersion)
+        formDataWriter.sendAnnotation(Annotation.BuildID, crash.buildId)
         formDataWriter.sendAnnotation(Annotation.Vendor, vendor)
-        formDataWriter.sendAnnotation(Annotation.Breadcrumbs, breadcrumbs)
+        formDataWriter.sendAnnotation(Annotation.Breadcrumbs, crash.breadcrumbsJson.toString())
         formDataWriter.sendAnnotation(Annotation.useragent_locale, Locale.getDefault().toLanguageTag())
         formDataWriter.sendAnnotation(Annotation.DistributionID, distributionId)
 
         var additionalDumps: FormDataWriter.AdditionalMinidumps? = null
 
-        extrasFilePath?.let {
+        crash.extrasFilePath?.let {
             val regex = "$FILE_REGEX$EXTRAS_FILE_EXT".toRegex()
             if (regex.matchEntire(it.substringAfterLast("/")) != null) {
                 val extrasFile = File(it)
@@ -281,46 +223,33 @@ class MozillaSocorroService(
             }
         }
 
-        if (throwable?.stackTrace?.isEmpty() == false) {
+        val throwable = crash.throwable?.takeIf { it.stackTrace.isNotEmpty() }
+        throwable?.also {
             formDataWriter.sendAnnotation(
                 Annotation.JavaStackTrace,
                 getExceptionStackTrace(
                     throwable,
-                    !isNativeCodeCrash && !isFatalCrash,
+                    !crash.isNativeCodeCrash && !crash.isFatalCrash,
                 ),
             )
 
             formDataWriter.sendAnnotation(Annotation.JavaException, throwable.getStacktraceAsJsonString())
         }
 
-        miniDumpFilePath?.let {
+        crash.miniDumpFilePath?.also {
             val regex = "$FILE_REGEX$MINI_DUMP_FILE_EXT".toRegex()
             if (regex.matchEntire(it.substringAfterLast("/")) != null) {
                 formDataWriter.sendAndDeleteFileAtPath("upload_file_minidump", it)
                 additionalDumps?.send(it)
             }
         }
-
-        formDataWriter.sendAnnotation(
-            Annotation.CrashType,
-            if (isNativeCodeCrash) {
-                if (isFatalCrash) FATAL_NATIVE_CRASH_TYPE else NON_FATAL_NATIVE_CRASH_TYPE
-            } else {
-                if (isFatalCrash) UNCAUGHT_EXCEPTION_TYPE else CAUGHT_EXCEPTION_TYPE
-            },
-        )
+        formDataWriter.sendAnnotation(Annotation.CrashType, crash.crashType)
 
         formDataWriter.sendPackageInstallTime(applicationContext)
         formDataWriter.sendProcessName(applicationContext)
         formDataWriter.sendAnnotation(Annotation.ReleaseChannel, releaseChannel)
-        formDataWriter.sendAnnotation(
-            Annotation.StartupTime,
-            TimeUnit.MILLISECONDS.toSeconds(startTime).toString(),
-        )
-        formDataWriter.sendAnnotation(
-            Annotation.CrashTime,
-            TimeUnit.MILLISECONDS.toSeconds(timestamp).toString(),
-        )
+        formDataWriter.sendAnnotation(Annotation.StartupTime, crash.startTime)
+        formDataWriter.sendAnnotation(Annotation.CrashTime, crash.crashTime)
         formDataWriter.sendAnnotation(Annotation.Android_PackageName, applicationContext.packageName)
         formDataWriter.sendAnnotation(Annotation.Android_Manufacturer, Build.MANUFACTURER)
         formDataWriter.sendAnnotation(Annotation.Android_Model, Build.MODEL)
@@ -578,11 +507,19 @@ class MozillaSocorroService(
         }
     }
 
-    internal fun buildServerUrl(versionName: String): String =
+    internal fun buildServerUrl(crash: Crash): String =
         "https://crash-reports.mozilla.com/submit".toUri()
             .buildUpon()
             .appendQueryParameter("id", appId)
-            .appendQueryParameter("version", versionName)
-            .appendQueryParameter("android_component_version", AcBuild.VERSION)
+            .appendQueryParameter("version", crash.versionName)
+            .appendQueryParameter("android_component_version", crash.acVersion)
             .build().toString()
+
+    internal val Crash.crashType: String
+        get() = when {
+            isNativeCodeCrash && isFatalCrash -> FATAL_NATIVE_CRASH_TYPE
+            isNativeCodeCrash -> NON_FATAL_NATIVE_CRASH_TYPE
+            isFatalCrash -> UNCAUGHT_EXCEPTION_TYPE
+            else -> CAUGHT_EXCEPTION_TYPE
+        }
 }
