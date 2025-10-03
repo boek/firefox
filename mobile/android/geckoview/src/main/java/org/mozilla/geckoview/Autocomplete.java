@@ -14,6 +14,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
@@ -648,6 +651,159 @@ public class Autocomplete {
       public @NonNull Builder email(final @Nullable String email) {
         mBundle.putString(EMAIL_KEY, email);
         return this;
+      }
+    }
+  }
+
+  public static class AddressStructure {
+    private static final String GET_ADDRESS_STRUCTURE = "GeckoView:Autofill:GetAddressStructure";
+    private static final String FIELD_ID_KEY = "fieldId";
+    private static final String L10N_ID_KEY = "l10nId";
+
+    @AnyThread
+    public static @NonNull GeckoResult<List<Field>> getAddressStructure(@NonNull String countryCode) {
+      final GeckoBundle param = new GeckoBundle();
+      param.putString("country", countryCode);
+      return EventDispatcher.getInstance().queryBundle(GET_ADDRESS_STRUCTURE, param)
+              .map(AddressStructure::fromBundle);
+    }
+
+    @NonNull
+    private static List<Field> fromBundle(final GeckoBundle bundle) {
+      if (bundle == null)
+        throw new IllegalStateException("AddressStructure.fromBundle expects non-null bundle, " +
+                "but got null value");
+
+      List<Field> fields = new ArrayList<>();
+
+      GeckoBundle[] bundleFields = bundle.getBundleArray("fields");
+      if (bundleFields == null) {
+        bundleFields = new GeckoBundle[]{};
+      }
+      for (GeckoBundle field : bundleFields) {
+        Field addressField = Field.fromBundle(field);
+        fields.add(addressField);
+      }
+
+      return fields;
+    }
+
+    public interface Field {
+      String getId();
+
+      String getLocalizationKey();
+
+      @NonNull
+      private static Field fromBundle(final GeckoBundle bundle) {
+        if (bundle.containsKey("options")) {
+          return SelectorField.fromBundle(bundle);
+        } else {
+          return TextField.fromBundle(bundle);
+        }
+      }
+
+      final class TextField implements Field {
+
+        private final String id;
+        private final String localizationKey;
+
+        TextField(String id, String localizationKey) {
+          this.id = id;
+          this.localizationKey = localizationKey;
+        }
+
+        @Override
+        public String getId() {
+          return id;
+        }
+
+        @Override
+        public String getLocalizationKey() {
+          return localizationKey;
+        }
+
+        @NonNull
+        static TextField fromBundle(final GeckoBundle bundle) {
+          return new TextField(
+                  bundle.getString(AddressStructure.FIELD_ID_KEY),
+                  bundle.getString(AddressStructure.L10N_ID_KEY)
+          );
+        }
+      }
+
+      final class SelectorField implements Field {
+        private final String id;
+        private final String localizationKey;
+        public final String defaultValue;
+        public final List<GeckoAddressFieldOption> options;
+
+        SelectorField(String id,
+                      String localizationKey,
+                      String defaultValue,
+                      List<GeckoAddressFieldOption> options) {
+          this.id = id;
+          this.localizationKey = localizationKey;
+          this.defaultValue = defaultValue;
+          this.options = options;
+        }
+
+        @Override
+        public String getId() {
+          return id;
+        }
+
+        @Override
+        public String getLocalizationKey() {
+          return localizationKey;
+        }
+
+        @NonNull
+        private static SelectorField fromBundle(final GeckoBundle bundle) {
+          String id = bundle.getString(AddressStructure.FIELD_ID_KEY);
+          String localizationKey = bundle.getString(AddressStructure.L10N_ID_KEY);
+          String defaultValue = bundle.getString("value", "");
+
+          List<GeckoAddressFieldOption> options = new ArrayList<>();
+          GeckoBundle[] bundleOptions = bundle.getBundleArray("options");
+          if (bundleOptions == null) bundleOptions = new GeckoBundle[]{};
+
+          for (GeckoBundle bundleOption : bundleOptions) {
+            options.add(GeckoAddressFieldOption.fromBundle(bundleOption));
+          }
+
+          return new SelectorField(id, localizationKey, defaultValue, options);
+        }
+
+        public static final class GeckoAddressFieldOption {
+          @NonNull
+          public final String key;
+
+          @NonNull
+          public final String value;
+
+          GeckoAddressFieldOption(@NonNull String key, @NonNull String value) {
+            this.key = key;
+            this.value = value;
+          }
+
+          @Nullable
+          private static GeckoAddressFieldOption fromBundle(final GeckoBundle bundle) {
+            if (bundle == null) return null;
+            try {
+              final String text = bundle.getString("text", "");
+              final String value = bundle.getString("value", "");
+
+              if (text.isEmpty() || value.isEmpty()) {
+                throw new IllegalStateException("AddressFieldOption text or value should not be null");
+              }
+
+              return new GeckoAddressFieldOption(value, text);
+            } catch (final Exception e) {
+              Log.e(LOGTAG, "Could not deserialize AddressFieldOption: " + e);
+              return null;
+            }
+          }
+        }
       }
     }
   }

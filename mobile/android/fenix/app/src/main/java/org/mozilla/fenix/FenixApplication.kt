@@ -236,6 +236,11 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
             // Make sure the engine is initialized and ready to use.
             components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
                 components.core.engine.warmUp()
+                components.core.engine.getAddressStructure(
+                    "us",
+                    { android.util.Log.e("boekboek", "we did something $it") },
+                    { android.util.Log.e("boekbeok", "we broke something") }
+                )
             }
 
             initializeGlean()
