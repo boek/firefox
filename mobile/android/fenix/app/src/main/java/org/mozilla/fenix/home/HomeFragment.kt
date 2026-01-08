@@ -631,6 +631,7 @@ class HomeFragment : Fragment() {
             profilerStartTime,
             "HomeFragment.onCreateView",
         )
+
         return binding.root
     }
 
