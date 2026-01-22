@@ -46,6 +46,7 @@ internal class EngineDelegateMiddleware(
             is EngineAction.ClearDataAction -> clearData(store, action)
             is EngineAction.PurgeHistoryAction -> purgeHistory(store.state)
             is EngineAction.FlushEngineSessionStateAction -> flushEngineSessionSate(store, action)
+            is EngineAction.QWACStatusAction -> qwacStatus(store, action)
             is TranslationsAction.TranslateAction -> {
                 next(action)
                 translate(store, action)
@@ -199,6 +200,14 @@ internal class EngineDelegateMiddleware(
     ) = scope.launch {
         getEngineSessionOrDispatch(store, action)
             ?.flushSessionState()
+    }
+
+    private fun qwacStatus(
+        store: Store<BrowserState, BrowserAction>,
+        action: EngineAction.QWACStatusAction,
+    ) = scope.launch {
+        getEngineSessionOrDispatch(store, action)
+            ?.qwacStatus(action.onResult)
     }
 }
 

@@ -36,6 +36,9 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
             is TrustPanelAction.Navigate.SecurityCertificate -> {
                 TrustPanel.securityCertificate.record(NoExtras())
             }
+            is TrustPanelAction.Navigate.QWAC -> {
+                TrustPanel.qwac.record(NoExtras())
+            }
 
             is TrustPanelAction.ClearSiteData,
             is TrustPanelAction.RequestClearSiteDataDialog,
@@ -47,6 +50,7 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
             is TrustPanelAction.UpdateAutoplayValue,
             is TrustPanelAction.UpdateSitePermissions,
             is TrustPanelAction.WebsitePermissionAction,
+            is TrustPanelAction.UpdateQWAC,
             TrustPanelAction.Navigate.PrivacySecuritySettings,
             is TrustPanelAction.Navigate.ManagePhoneFeature,
             -> Unit

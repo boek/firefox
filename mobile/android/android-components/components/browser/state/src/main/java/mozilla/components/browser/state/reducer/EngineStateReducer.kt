@@ -73,6 +73,7 @@ internal object EngineStateReducer {
             is EngineAction.PrintContentExceptionAction,
             is EngineAction.ClearDataAction,
             is EngineAction.FlushEngineSessionStateAction,
+            is EngineAction.QWACStatusAction,
             -> {
                 throw IllegalStateException("You need to add EngineMiddleware to your BrowserStore. ($action)")
             }

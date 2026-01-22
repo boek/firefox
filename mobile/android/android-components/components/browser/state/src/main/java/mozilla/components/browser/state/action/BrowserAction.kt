@@ -65,6 +65,7 @@ import mozilla.components.concept.storage.HistoryMetadataKey
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.DelicateAction
 import mozilla.components.support.base.android.Clock
+import java.security.cert.X509Certificate
 import java.util.Locale
 
 /**
@@ -1556,6 +1557,15 @@ sealed class EngineAction : BrowserAction() {
      * Flushes the most recent state of the session with the provided [tabId].
      */
     data class FlushEngineSessionStateAction(
+        override val tabId: String,
+    ) : EngineAction(), ActionWithTab
+
+    /**
+     * Asynchronously determines if the page loaded in the provided [tabId]
+     * uses a QWAC, eventually calling [onResult] with it or null.
+     */
+    data class QWACStatusAction(
+        val onResult: (X509Certificate?) -> Unit,
         override val tabId: String,
     ) : EngineAction(), ActionWithTab
 }

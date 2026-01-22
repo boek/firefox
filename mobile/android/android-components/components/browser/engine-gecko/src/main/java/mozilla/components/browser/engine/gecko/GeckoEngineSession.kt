@@ -78,6 +78,7 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
+import java.security.cert.X509Certificate
 import java.util.Locale
 import kotlin.coroutines.CoroutineContext
 import org.mozilla.geckoview.TranslationsController.SessionTranslation as GeckoViewTranslateSession
@@ -1568,6 +1569,13 @@ class GeckoEngineSession(
             }
             else -> HitResult.UNKNOWN("")
         }
+    }
+
+    override fun qwacStatus(onResult: (X509Certificate?) -> Unit) {
+      geckoSession.qwacStatus().then({ qwac ->
+        onResult(qwac)
+        GeckoResult<Void>()
+      })
     }
 
     private fun createGeckoSession(shouldOpen: Boolean = true) {

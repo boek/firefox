@@ -1260,6 +1260,7 @@ package org.mozilla.geckoview {
     method @UiThread public void open(@NonNull GeckoRuntime);
     method @AnyThread public void printPageContent();
     method @AnyThread public void purgeHistory();
+    method @NonNull @UiThread public GeckoResult<X509Certificate> qwacStatus();
     method @UiThread public void releaseDisplay(@NonNull GeckoDisplay);
     method @AnyThread public void reload();
     method @AnyThread public void reload(int);

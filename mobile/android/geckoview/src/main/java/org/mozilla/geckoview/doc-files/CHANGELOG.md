@@ -13,6 +13,11 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v149
+- Added [`GeckoSession.qwacStatus`][149.1] API.
+
+[149.1]: {{javadoc_uri}}/GeckoSession.html#qwacStatus()
+
 ## v148
 - Introduce the harmful-addon URL-Classifier feature
         - [`HARMFULADDON`][148.1]
@@ -1892,4 +1897,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: c3ca86b7e2f375d68aa9ce29504debdb17c6500f
+[api-version]: d847c794241b41db02824fc2c0b50e3b3b43c442

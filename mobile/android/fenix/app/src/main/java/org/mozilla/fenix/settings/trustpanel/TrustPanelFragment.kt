@@ -55,6 +55,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelMiddleware
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelNavigationMiddleware
@@ -180,6 +181,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                 onRequestDismiss = ::dismiss,
                 handlebarContentDescription = "",
             ) {
+                val websiteInfoState by remember {
+                    store.stateFlow.map { state -> state.websiteInfoState }
+                }.collectAsState(initial = store.state.websiteInfoState)
                 val baseDomain by remember {
                     store.stateFlow.map { state -> state.baseDomain }
                 }.collectAsState(initial = null)
@@ -257,6 +261,10 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     )
                 }
 
+                requireComponents.useCases.sessionUseCases.qwacStatus({ qwac ->
+                    store.dispatch(TrustPanelAction.UpdateQWAC(qwac))
+                })
+
                 AnimatedContent(
                     targetState = contentState,
                     transitionSpec = trustPanelTransitionSpec(contentState),
@@ -265,7 +273,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     when (route) {
                         Route.ProtectionPanel -> {
                             ProtectionPanel(
-                                websiteInfoState = store.state.websiteInfoState,
+                                websiteInfoState = websiteInfoState,
                                 icon = sessionState?.content?.icon,
                                 isTrackingProtectionEnabled = isTrackingProtectionEnabled,
                                 isGlobalTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled,
@@ -293,6 +301,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                 },
                                 onViewCertificateClick = {
                                     store.dispatch(TrustPanelAction.Navigate.SecurityCertificate)
+                                },
+                                onViewQWACClick = {
+                                    store.dispatch(TrustPanelAction.Navigate.QWAC)
                                 },
                             )
                         }

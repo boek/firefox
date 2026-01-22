@@ -147,6 +147,11 @@ private fun reducer(state: TrustPanelState, action: TrustPanelAction): TrustPane
         is TrustPanelAction.UpdateSitePermissions -> state.copy(
             sitePermissions = action.sitePermissions,
         )
+        is TrustPanelAction.UpdateQWAC -> state.copy(
+            websiteInfoState = state.websiteInfoState.copy(
+                qwac = action.qwac,
+            ),
+        )
     }
 }
 

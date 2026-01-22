@@ -15,6 +15,7 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.translate.TranslationOptions
+import java.security.cert.X509Certificate
 
 /**
  * Contains use cases related to the session feature.
@@ -519,6 +520,30 @@ class SessionUseCases(
         }
     }
 
+    /**
+     * A use case for requesting a given tab's QWAC status.
+     */
+    class QWACStatusUseCase internal constructor(
+        private val store: BrowserStore,
+    ) {
+        /**
+         * Asynchronously determines if the page loaded in the provided [tabId]
+         * uses a QWAC, eventually calling [onResult] with it or null.
+         *
+         * @param onResult Callback to call with the QWAC or null if none.
+         * @param tabId The [tabId] associated with the request.
+         */
+        operator fun invoke(
+            onResult: (X509Certificate?) -> Unit,
+            tabId: String? = store.state.selectedTabId,
+        ) {
+            if (tabId == null) {
+                return
+            }
+            store.dispatch(EngineAction.QWACStatusAction(onResult, tabId))
+        }
+    }
+
     val loadUrl: DefaultLoadUrlUseCase by lazy { DefaultLoadUrlUseCase(store, onNoTab) }
     val loadData: LoadDataUseCase by lazy { LoadDataUseCase(store, onNoTab) }
     val reload: ReloadUrlUseCase by lazy { ReloadUrlUseCase(store) }
@@ -535,4 +560,5 @@ class SessionUseCases(
     val crashRecovery: CrashRecoveryUseCase by lazy { CrashRecoveryUseCase(store) }
     val purgeHistory: PurgeHistoryUseCase by lazy { PurgeHistoryUseCase(store) }
     val updateLastAccess: UpdateLastAccessUseCase by lazy { UpdateLastAccessUseCase(store) }
+    val qwacStatus: QWACStatusUseCase by lazy { QWACStatusUseCase(store) }
 }

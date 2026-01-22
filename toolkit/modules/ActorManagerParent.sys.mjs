@@ -547,6 +547,14 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
+  TLSCertificateBinding: {
+    child: {
+      esModuleURI: "resource://gre/actors/TLSCertificateBindingChild.sys.mjs",
+    },
+
+    messageManagerGroups: ["browsers"],
+  },
+
   // This actor is available for all pages that one can
   // view the source of, however it won't be created until a
   // request to view the source is made via the message
