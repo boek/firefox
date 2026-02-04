@@ -15,11 +15,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-class LifecycleAwareSensorManagerEventFlowTest {
+class SensorManagerBackedAccelerometerTest {
 
     private lateinit var mockSensorManager: SensorManager
     private lateinit var mockSensor: Sensor
-    private lateinit var eventFlow: LifecycleAwareSensorManagerEventFlow
+    private lateinit var eventFlow: SensorManagerBackedAccelerometer
     private val logMessages = mutableListOf<String>()
 
     @Before
@@ -29,7 +29,7 @@ class LifecycleAwareSensorManagerEventFlowTest {
         whenever(mockSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)).thenReturn(mockSensor)
 
         logMessages.clear()
-        eventFlow = LifecycleAwareSensorManagerEventFlow(
+        eventFlow = SensorManagerBackedAccelerometer(
             sensorManager = mockSensorManager,
             logger = { message -> logMessages.add(message) },
         )

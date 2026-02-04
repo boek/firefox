@@ -13,8 +13,9 @@ import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.map
 import mozilla.components.concept.accelerometer.Accelerometer
-import mozilla.components.concept.accelerometer.AccelerometerEventFlow
+import mozilla.components.concept.accelerometer.Accelerometer.Sample
 import mozilla.components.support.base.log.logger.Logger
 
 private const val NUM_SAMPLE_REPLAY = 5
@@ -25,28 +26,28 @@ private const val NUM_SAMPLE_REPLAY = 5
  * and can be added as a lifecycle observer to handle registering and unregistering its
  * sensor management automatically.
  */
-class LifecycleAwareSensorManagerEventFlow(
+class SensorManagerBackedAccelerometer(
     private val sensorManager: SensorManager,
     private val logger: (String) -> Unit = { message ->
         Logger("mozac/LifecycleAwareSensorManagerEventFlow").info(message)
     },
-) : AccelerometerEventFlow, SensorEventListener, DefaultLifecycleObserver {
+) : Accelerometer, SensorEventListener, DefaultLifecycleObserver {
 
     private val sensor: Sensor? by lazy {
         sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     }
 
-    private val _samples = MutableSharedFlow<Accelerometer.Sample>(
+    private val _samples = MutableSharedFlow<Sample>(
         replay = NUM_SAMPLE_REPLAY,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
-    override fun flowEvents(): Flow<Accelerometer.Sample> = _samples
+    override val samples: Flow<Sample> = _samples.map(Sample::normalized)
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
 
     override fun onSensorChanged(event: SensorEvent) {
-        val sample = Accelerometer.Sample(
+        val sample = Sample(
             event.values[0],
             event.values[1],
             event.values[2],
