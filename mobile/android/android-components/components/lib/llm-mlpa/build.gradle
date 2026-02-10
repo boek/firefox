@@ -22,7 +22,14 @@ android {
 }
 
 dependencies {
+    api project(":components:concept-fetch")
+    api project(":components:concept-integrity")
+    api project(":components:concept-llm")
+    implementation project(':components:support-base')
+
+    testImplementation project(':components:support-test')
     testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlinx.coroutines.test
 }
 
 apply from: '../../../common-config.gradle'

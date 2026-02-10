@@ -10,6 +10,6 @@ import org.junit.Test
 class ExampleTest {
     @Test
     fun testHello() {
-        assertEquals("hello user", Example().hello("user"))
+        assertEquals("hello user", MLPALlmClient().hello("user"))
     }
 }
