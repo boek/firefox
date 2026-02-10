@@ -23,6 +23,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -261,9 +262,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     )
                 }
 
-                requireComponents.useCases.sessionUseCases.qwacStatus({ qwac ->
-                    store.dispatch(TrustPanelAction.UpdateQWAC(qwac))
-                })
+                LaunchedEffect(Unit) {
+                    store.dispatch(TrustPanelAction.RequestQWAC)
+                }
 
                 AnimatedContent(
                     targetState = contentState,

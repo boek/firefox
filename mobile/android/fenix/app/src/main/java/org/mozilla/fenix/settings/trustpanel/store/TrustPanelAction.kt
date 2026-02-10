@@ -71,6 +71,11 @@ sealed class TrustPanelAction : Action {
     data class UpdateSitePermissions(val sitePermissions: SitePermissions) : TrustPanelAction()
 
     /**
+     * [TrustPanelAction] dispatched when QWAC status is requested.
+     */
+    data object RequestQWAC : TrustPanelAction()
+
+    /**
      * [TrustPanelAction] dispatched when QWAC status is determined.
      *
      * @property qwac The QWAC ([X509Certificate]) in use, or null if none.
