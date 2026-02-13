@@ -26,6 +26,7 @@ dependencies {
     api project(":components:concept-integrity")
     api project(":components:concept-llm")
     implementation project(':components:support-base')
+    implementation libs.kotlinx.serialization.json
 
     testImplementation project(':components:support-test')
     testImplementation libs.androidx.test.junit
