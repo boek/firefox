@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.feature.summarize.R
-import mozilla.components.feature.summarize.SummarizationAction.DownloadInProgressAction
+import mozilla.components.feature.summarize.DownloadInProgressAction
 import mozilla.components.feature.summarize.SummarizationState
 
 /**
@@ -48,8 +48,8 @@ internal fun DownloadProgress(
 @Composable
 private fun DownloadProgressContent(
     modifier: Modifier = Modifier,
-    bytesDownloaded: Float,
-    bytesToDownload: Float,
+    bytesDownloaded: Long,
+    bytesToDownload: Long,
     downloadProgress: Float,
     onClickCancel: () -> Unit,
 ) {
@@ -78,7 +78,7 @@ private fun DownloadProgressContent(
         )
 
         Text(
-            text = stringResource(R.string.mozac_summarize_download_progress_caption, bytesDownloaded, bytesToDownload),
+            text = stringResource(R.string.mozac_summarize_download_progress_caption, bytesDownloaded.toFloat() / 1_000_000, bytesToDownload.toFloat() / 1_000_000),
             style = AcornTheme.typography.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
@@ -101,12 +101,10 @@ private fun DownloadProgressContent(
 @Composable
 private fun PreviewDownloadProgress() = AcornTheme {
     Surface {
-        val bytesToDownload = 12.13f
-        val bytesDownloaded = 9.04f
         DownloadProgress(
             downloadState = SummarizationState.Downloading(
-                bytesToDownload = bytesToDownload,
-                bytesDownloaded = bytesDownloaded,
+                bytesToDownload = 12L,
+                bytesDownloaded = 9L,
             ),
         )
     }

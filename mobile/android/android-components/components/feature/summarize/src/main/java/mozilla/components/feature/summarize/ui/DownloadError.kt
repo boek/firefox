@@ -26,7 +26,7 @@ import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.feature.summarize.R
-import mozilla.components.feature.summarize.SummarizationAction.DownloadErrorAction
+import mozilla.components.feature.summarize.DownloadErrorAction
 
 @Composable
 internal fun DownloadError(

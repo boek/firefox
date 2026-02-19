@@ -14,10 +14,10 @@ internal sealed class SummarizationState : State {
     data object ShakeConsentRequired : SummarizationState()
     data object ShakeConsentWithDownloadRequired : SummarizationState()
     data object DownloadConsentRequired : SummarizationState()
-    data class Downloading(val bytesToDownload: Float, val bytesDownloaded: Float) : SummarizationState() {
-        val downloadProgress: Float get() = bytesToDownload / bytesToDownload
+    data class Downloading(val bytesToDownload: Long, val bytesDownloaded: Long) : SummarizationState() {
+        val downloadProgress: Float get() = bytesToDownload.toFloat() / bytesToDownload.toFloat()
     }
-    data object Summarizing : SummarizationState()
+    data class Summarizing(val text: String = "") : SummarizationState()
     data class Summarized(val text: String) : SummarizationState()
     data class Error(val error: SummarizationError) : SummarizationState()
 
