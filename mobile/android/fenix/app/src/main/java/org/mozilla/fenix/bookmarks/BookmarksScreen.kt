@@ -95,6 +95,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.appservices.places.BookmarkRoot
@@ -1318,6 +1323,23 @@ private fun BookmarksState.emptyListState(): EmptyListState? {
 }
 
 @Composable
+fun Animation() {
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(R.raw.animation)
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+    )
+
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
+        modifier = Modifier.size(200.dp),
+    )
+}
+
+@Composable
 private fun EmptyList(
     state: EmptyListState,
     showBookmarksImport: Boolean,
@@ -1334,19 +1356,7 @@ private fun EmptyList(
             modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            when (state) {
-                is EmptyListState.NotAuthenticated -> RootEmptyContent(
-                    dispatcher,
-                    showSignIn = true,
-                    showBookmarksImport = showBookmarksImport,
-                )
-                EmptyListState.Authenticated -> RootEmptyContent(
-                    dispatcher,
-                    showSignIn = false,
-                    showBookmarksImport = showBookmarksImport,
-                )
-                EmptyListState.Folder -> FolderEmptyContent()
-            }
+            Animation()
         }
     }
 }
