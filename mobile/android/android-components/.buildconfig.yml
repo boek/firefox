@@ -1791,6 +1791,30 @@ projects:
     - components:ui-icons
     - components:ui-tabcounter
     - components:ui-widgets
+  components:feature-takeout-importer:
+    description: Drives the Google Takeout export flow via a built-in WebExtension
+      and extracts files from the resulting ZIP download.
+    path: components/feature/takeout-importer
+    publish: true
+    upstream_dependencies:
+    - components:browser-errorpages
+    - components:browser-state
+    - components:concept-awesomebar
+    - components:concept-base
+    - components:concept-engine
+    - components:concept-fetch
+    - components:concept-storage
+    - components:concept-storage-bookmarks
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:support-base
+    - components:support-ktx
+    - components:support-test
+    - components:support-test-libstate
+    - components:support-utils
+    - components:support-webextensions
+    - components:tooling-lint
+    - components:ui-icons
   components:feature-toolbar:
     description: Feature implementation connecting a toolbar implementation with the
       session module.

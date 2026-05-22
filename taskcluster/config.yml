@@ -329,6 +329,7 @@ treeherder:
         'feature-syncedtabs': 'feature-syncedtabs'
         'feature-tab-collections': 'feature-tab-collections'
         'feature-tabs': 'feature-tabs'
+        'feature-takeout-importer': 'feature-takeout-importer'
         'feature-toolbar': 'feature-toolbar'
         'feature-top-sites': 'feature-top-sites'
         'feature-webauthn': 'feature-webauthn'

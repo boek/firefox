@@ -507,6 +507,8 @@ export default [
       "mobile/android/android-components/components/feature/readerview/src/main/assets/extensions/readerview/readerview.js",
       "mobile/android/android-components/components/feature/search/src/main/assets/extensions/ads/adsTelemetry.js",
       "mobile/android/android-components/components/feature/search/src/main/assets/extensions/search/searchTelemetry.js",
+      "mobile/android/android-components/components/feature/takeout-importer/src/main/assets/extensions/takeout/takeout-background.js",
+      "mobile/android/android-components/components/feature/takeout-importer/src/main/assets/extensions/takeout/takeout-content.js",
       "mobile/android/android-components/samples/browser/src/main/assets/extensions/test/background.js",
       "testing/talos/talos/tests/devtools/addon/driver.js",
       "testing/talos/talos/tests/twinopen/driver.js",
