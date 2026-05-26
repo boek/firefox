@@ -506,6 +506,11 @@
     </fragment>
 
     <fragment
+        android:id="@+id/takeoutImportFragment"
+        android:name="org.mozilla.fenix.bookmarks.TakeoutImportFragment"
+        android:label="@string/library_bookmarks" />
+
+    <fragment
         android:id="@+id/bookmarkEditFragment"
         android:name="org.mozilla.fenix.bookmarks.EditBookmarkFragment">
         <argument

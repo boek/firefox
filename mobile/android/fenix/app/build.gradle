@@ -503,6 +503,7 @@ dependencies {
     implementation project(':components:feature-sitepermissions')
     implementation project(':components:feature-summarize')
     implementation project(':components:feature-syncedtabs')
+    implementation project(':components:feature-takeout-importer')
     implementation project(':components:feature-toolbar')
     implementation project(':components:feature-tab-collections')
     implementation project(':components:feature-tabs')

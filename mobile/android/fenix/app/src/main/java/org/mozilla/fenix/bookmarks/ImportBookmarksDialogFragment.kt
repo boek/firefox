@@ -8,8 +8,21 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.compose.content
+import androidx.navigation.fragment.findNavController
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.concept.bookmark.parser.BookmarksFileParser
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
@@ -22,6 +35,7 @@ import org.mozilla.fenix.bookmarks.importer.FenixBookmarkImporterError
 import org.mozilla.fenix.bookmarks.importer.FenixImporterEvent
 import org.mozilla.fenix.bookmarks.importer.toFenixError
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.theme.FirefoxTheme
 
 internal class ImportBookmarksDialogFragment : DialogFragment() {
     override fun onCreateView(
@@ -29,23 +43,34 @@ internal class ImportBookmarksDialogFragment : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View = content {
-        BookmarkImporter(
-            importer = BookmarksFileImporter.htmlImporter(
-                context = requireContext(),
-                parentGuid = BookmarkRoot.Mobile.id,
-                parser = BookmarksFileParser.jsoupParser(
-                    rootFolderName = requireContext().getString(R.string.bookmark_import_destination_default_name),
+        var sourceChosen by remember { mutableStateOf(false) }
+        if (!sourceChosen) {
+            SourceChooser(
+                onChooseFile = { sourceChosen = true },
+                onChooseTakeout = {
+                    dismiss()
+                    findNavController().navigate(R.id.takeoutImportFragment)
+                },
+            )
+        } else {
+            BookmarkImporter(
+                importer = BookmarksFileImporter.htmlImporter(
+                    context = requireContext(),
+                    parentGuid = BookmarkRoot.Mobile.id,
+                    parser = BookmarksFileParser.jsoupParser(
+                        rootFolderName = requireContext().getString(R.string.bookmark_import_destination_default_name),
+                    ),
+                    inserter = requireComponents.core.bookmarksStorage,
                 ),
-                inserter = requireComponents.core.bookmarksStorage,
-            ),
-            onEventReceived = { event ->
-                parentFragmentManager.setFragmentResult(
-                    REQUEST_KEY,
-                    event.resultBundle(),
-                )
-                dismissWhenFinished(event)
-            },
-        )
+                onEventReceived = { event ->
+                    parentFragmentManager.setFragmentResult(
+                        REQUEST_KEY,
+                        event.resultBundle(),
+                    )
+                    dismissWhenFinished(event)
+                },
+            )
+        }
     }
 
     private fun dismissWhenFinished(event: ImporterEvent) {
@@ -102,5 +127,21 @@ private fun ImporterEvent.resultBundle(): Bundle {
         error?.let {
             putInt(ImportBookmarksDialogFragment.KEY_ERROR_TYPE, error.ordinal)
         }
+    }
+}
+
+@Composable
+private fun SourceChooser(
+    onChooseFile: () -> Unit,
+    onChooseTakeout: () -> Unit,
+) {
+    val space = FirefoxTheme.layout.space
+    Column(
+        modifier = Modifier.padding(space.static200),
+        verticalArrangement = Arrangement.spacedBy(space.static100),
+    ) {
+        Text(text = "Choose how to import bookmarks")
+        Button(onClick = onChooseFile) { Text("Choose an HTML file") }
+        OutlinedButton(onClick = onChooseTakeout) { Text("Import from Google Takeout") }
     }
 }

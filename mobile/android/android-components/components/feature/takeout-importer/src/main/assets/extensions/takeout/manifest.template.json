@@ -9,10 +9,7 @@
   "version": "${version}",
   "content_scripts": [
     {
-      "matches": [
-        "https://takeout.google.com/*",
-        "https://accounts.google.com/*"
-      ],
+      "matches": ["https://takeout.google.com/*"],
       "js": ["takeout-content.js"],
       "run_at": "document_idle"
     }
@@ -27,7 +24,6 @@
     "nativeMessaging",
     "nativeMessagingFromContent",
     "tabs",
-    "https://takeout.google.com/*",
-    "https://accounts.google.com/*"
+    "https://takeout.google.com/*"
   ]
 }

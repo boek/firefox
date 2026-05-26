@@ -9,7 +9,6 @@ plugins {
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.feature.takeout.importer'
@@ -30,7 +29,7 @@ dependencies {
     implementation project(':components:support-ktx')
     implementation project(':components:support-webextensions')
 
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
