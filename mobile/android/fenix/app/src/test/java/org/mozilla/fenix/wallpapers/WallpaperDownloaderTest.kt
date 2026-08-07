@@ -26,7 +26,7 @@ class WallpaperDownloaderTest {
     @JvmField
     val tempFolder = TemporaryFolder()
 
-    private val remoteHost = BuildConfig.WALLPAPER_URL
+    private val remoteHost = "https://wallpapers-lyart.vercel.app/android/wallpapers"
 
     private val wallpaperBytes = "file contents"
     private val portraitResponseBodySuccess = Response.Body(wallpaperBytes.byteInputStream())

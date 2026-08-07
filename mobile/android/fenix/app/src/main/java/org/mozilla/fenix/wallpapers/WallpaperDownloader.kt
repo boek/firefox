@@ -27,7 +27,7 @@ class WallpaperDownloader(
     private val client: Client,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
-    private val remoteHost = BuildConfig.WALLPAPER_URL
+    private val remoteHost = "https://wallpapers-lyart.vercel.app/android/wallpapers"
 
     /**
      * Downloads a wallpaper from the network. Will try to fetch 2 versions of each wallpaper:

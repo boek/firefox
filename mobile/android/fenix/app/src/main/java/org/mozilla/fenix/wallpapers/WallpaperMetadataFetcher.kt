@@ -24,7 +24,7 @@ import java.util.Locale
 class WallpaperMetadataFetcher(
     private val client: Client,
 ) {
-    private val metadataUrl = BuildConfig.WALLPAPER_URL.substringBefore("android") +
+    private val metadataUrl = "https://wallpapers-lyart.vercel.app/android/wallpapers".substringBefore("android") +
         "metadata/v$CURRENT_JSON_VERSION/wallpapers.json"
 
     /**
